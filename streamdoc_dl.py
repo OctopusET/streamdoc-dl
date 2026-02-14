@@ -83,16 +83,12 @@ def download_page_image(
     zoom: str,
 ) -> tuple[int, bytes]:
     """Download a single page image. Returns (index, image_bytes)."""
-    url = (
-        f"{base_url}/v4/documents/{doc_id}/renderings/{page_index}"
-        f"?zoom={zoom}&renderAnnots=false"
-    )
+    params = f"zoom={zoom}&jpegQuality=h&renderAnnots=false&increasePrint=false"
+    url = f"{base_url}/v4/documents/{doc_id}/renderings/{page_index}?{params}"
     resp = session.get(url)
     if resp.status_code != 200 and zoom == "max":
-        url = (
-            f"{base_url}/v4/documents/{doc_id}/renderings/{page_index}"
-            f"?zoom=300&renderAnnots=false"
-        )
+        params = "zoom=300&jpegQuality=h&renderAnnots=false&increasePrint=false"
+        url = f"{base_url}/v4/documents/{doc_id}/renderings/{page_index}?{params}"
         resp = session.get(url)
     resp.raise_for_status()
     ct = resp.headers.get("x-streamdocs-content-type", "")
