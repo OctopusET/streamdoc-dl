@@ -283,33 +283,61 @@ def main():
 
     font_name = register_font(args.font)
 
-    # Download images and text concurrently
+    # Load cached pages
+    cache_dir = Path(f".streamdoc-dl-cache/{doc_id}")
     images = [None] * page_count
     texts = [None] * page_count
-    done = 0
-    total = page_count * 2
+    for i in range(page_count):
+        img_path = cache_dir / f"{i}.img"
+        txt_path = cache_dir / f"{i}.json"
+        if img_path.exists():
+            images[i] = img_path.read_bytes()
+        if txt_path.exists():
+            texts[i] = json.loads(txt_path.read_text())
 
-    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futures = {}
-        for i in range(page_count):
-            futures[
-                pool.submit(download_page_image, session, base_url, doc_id, i, args.zoom)
-            ] = ("img", i)
-            futures[
-                pool.submit(download_page_text, session, base_url, doc_id, i)
-            ] = ("txt", i)
+    # Download missing pages
+    missing = []
+    for i in range(page_count):
+        if images[i] is None:
+            missing.append(("img", i))
+        if texts[i] is None:
+            missing.append(("txt", i))
 
-        for future in as_completed(futures):
-            kind, _ = futures[future]
-            idx, data = future.result()
-            if kind == "img":
-                images[idx] = data
-            else:
-                texts[idx] = data
-            done += 1
-            print(f"\rDownloading: {done}/{total}", end="", flush=True)
+    if missing:
+        cached = page_count * 2 - len(missing)
+        if cached:
+            print(f"Resuming: {cached}/{page_count * 2} cached")
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        done = 0
+        total = len(missing)
 
-    print(" done.")
+        with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+            futures = {}
+            for kind, i in missing:
+                if kind == "img":
+                    futures[
+                        pool.submit(download_page_image, session, base_url, doc_id, i, args.zoom)
+                    ] = ("img", i)
+                else:
+                    futures[
+                        pool.submit(download_page_text, session, base_url, doc_id, i)
+                    ] = ("txt", i)
+
+            for future in as_completed(futures):
+                kind, _ = futures[future]
+                idx, data = future.result()
+                if kind == "img":
+                    images[idx] = data
+                    (cache_dir / f"{idx}.img").write_bytes(data)
+                else:
+                    texts[idx] = data
+                    (cache_dir / f"{idx}.json").write_text(json.dumps(data))
+                done += 1
+                print(f"\rDownloading: {done}/{total}", end="", flush=True)
+
+        print(" done.")
+    else:
+        print("All pages cached.")
 
     output = args.output
     if not output:
@@ -321,6 +349,13 @@ def main():
     if args.compress:
         print(f"Compressing ({args.compress})...")
         compress_pdf(output, args.compress)
+
+    # Clean up cache
+    shutil.rmtree(cache_dir, ignore_errors=True)
+    try:
+        cache_dir.parent.rmdir()
+    except OSError:
+        pass
 
     print(f"Saved: {output}")
 
