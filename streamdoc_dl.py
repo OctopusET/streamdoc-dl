@@ -183,13 +183,23 @@ def build_pdf(layouts, images, texts, output_path, doc_info=None, font_name="Hel
             c.drawImage(img, 0, 0, width=w, height=h)
 
         if texts[i]:
-            # Compute median char height to detect watermark chars
+            # Detect watermark: look for chars with rotate=15 block
+            # or bimodal height distribution (large gap between clusters)
+            wm_threshold = None
             heights = []
+            has_rotated = False
             for block in texts[i]:
+                if block.get("rotate", 0) != 0:
+                    has_rotated = True
                 for rect in block.get("rect", []):
                     heights.append(rect["top"] - rect["bottom"])
-            median_h = sorted(heights)[len(heights) // 2] if heights else 16
-            wm_threshold = median_h * 2
+            if has_rotated and heights:
+                sorted_h = sorted(heights)
+                median_h = sorted_h[len(sorted_h) // 2]
+                max_h = sorted_h[-1]
+                # Only filter if the tallest chars are 3x+ the median
+                if max_h >= median_h * 3:
+                    wm_threshold = median_h * 2
 
             c.setFillAlpha(0)
             for block in texts[i]:
@@ -200,7 +210,7 @@ def build_pdf(layouts, images, texts, output_path, doc_info=None, font_name="Hel
 
                 for ch, rect in zip(text_str, rects):
                     font_size = max(rect["top"] - rect["bottom"], 1)
-                    if font_size > wm_threshold:
+                    if wm_threshold and font_size > wm_threshold:
                         continue
                     c.setFont(font_name, font_size)
                     c.drawString(rect["left"], rect["bottom"], ch)
