@@ -38,7 +38,7 @@ def get_document_info(session: requests.Session, base_url: str, doc_id: str) -> 
     data = resp.content
     offset = 0
     result = {}
-    for name, size in zip(heads, sizes):
+    for name, size in zip(heads, sizes, strict=True):
         chunk = data[offset : offset + size]
         offset += size
         if name == "document":
@@ -163,7 +163,15 @@ def register_font(font_path: str | None) -> str:
     return "HYSMyeongJo-Medium"
 
 
-def build_pdf(layouts, images, texts, output_path, doc_info=None, font_name="Helvetica", strip_watermark=True):
+def build_pdf(
+    layouts,
+    images,
+    texts,
+    output_path,
+    doc_info=None,
+    font_name="Helvetica",
+    strip_watermark=True,
+):
     """Build a PDF with image backgrounds and invisible text overlay."""
     c = canvas.Canvas(str(output_path))
 
@@ -209,7 +217,7 @@ def build_pdf(layouts, images, texts, output_path, doc_info=None, font_name="Hel
                 if not text_str or not rects:
                     continue
 
-                for ch, rect in zip(text_str, rects):
+                for ch, rect in zip(text_str, rects, strict=True):
                     font_size = max(rect["top"] - rect["bottom"], 1)
                     if wm_threshold and font_size > wm_threshold:
                         continue
@@ -230,10 +238,15 @@ def compress_pdf(path: str, level: str = "ebook"):
 
     tmp = path + ".tmp"
     cmd = [
-        gs, "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.4",
+        gs,
+        "-sDEVICE=pdfwrite",
+        "-dCompatibilityLevel=1.4",
         f"-dPDFSETTINGS=/{level}",
-        "-dNOPAUSE", "-dBATCH", "-dQUIET",
-        f"-sOutputFile={tmp}", path,
+        "-dNOPAUSE",
+        "-dBATCH",
+        "-dQUIET",
+        f"-sOutputFile={tmp}",
+        path,
     ]
     subprocess.run(cmd, check=True)
 
@@ -252,7 +265,10 @@ def main():
     parser.add_argument("url", help="StreamDocs viewer URL")
     parser.add_argument("-o", "--output", help="Output PDF path")
     parser.add_argument(
-        "-z", "--zoom", default="max", help="Zoom level: 'max' for highest quality, or a number (default: max)"
+        "-z",
+        "--zoom",
+        default="max",
+        help="Zoom level: 'max' for highest quality, or a number (default: max)",
     )
     parser.add_argument(
         "-j", "--jobs", type=int, default=4, help="Concurrent downloads (default: 4)"
@@ -312,7 +328,9 @@ def main():
 
     # Load cached pages
     if sys.platform == "win32":
-        cache_home = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+        cache_home = Path(
+            os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")
+        )
     elif sys.platform == "darwin":
         cache_home = Path.home() / "Library" / "Caches"
     else:
@@ -349,7 +367,9 @@ def main():
             for kind, i in missing:
                 if kind == "img":
                     futures[
-                        pool.submit(download_page_image, session, base_url, doc_id, i, args.zoom)
+                        pool.submit(
+                            download_page_image, session, base_url, doc_id, i, args.zoom
+                        )
                     ] = ("img", i)
                 else:
                     futures[
@@ -377,7 +397,15 @@ def main():
         output = filename if filename else f"{doc_id[:32]}.pdf"
 
     print("Building PDF...")
-    build_pdf(layouts, images, texts, output, doc_info=info.get("info", {}), font_name=font_name, strip_watermark=not args.no_strip_watermark)
+    build_pdf(
+        layouts,
+        images,
+        texts,
+        output,
+        doc_info=info.get("info", {}),
+        font_name=font_name,
+        strip_watermark=not args.no_strip_watermark,
+    )
 
     if args.compress:
         print(f"Compressing ({args.compress})...")
