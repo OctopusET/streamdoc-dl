@@ -69,8 +69,13 @@ streamdoc-dl URL --tor
 ### Resume
 
 Interrupted downloads are automatically resumed. Page images and text are cached
-in `.streamdoc-dl-cache/` as they download. Re-run the same command to continue
-from where it left off. The cache is cleaned up after the PDF is built.
+as they download. Re-run the same command to continue from where it left off.
+The cache is cleaned up after the PDF is built.
+
+Cache location:
+- Linux: `$XDG_CACHE_HOME/streamdoc-dl/` or `~/.cache/streamdoc-dl/`
+- macOS: `~/Library/Caches/streamdoc-dl/`
+- Windows: `%LOCALAPPDATA%\streamdoc-dl\`
 
 ## How it works
 

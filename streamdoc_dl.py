@@ -3,8 +3,10 @@
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
 from pathlib import Path
@@ -286,7 +288,13 @@ def main():
     font_name = register_font(args.font)
 
     # Load cached pages
-    cache_dir = Path(f".streamdoc-dl-cache/{doc_id}")
+    if sys.platform == "win32":
+        cache_home = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+    elif sys.platform == "darwin":
+        cache_home = Path.home() / "Library" / "Caches"
+    else:
+        cache_home = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+    cache_dir = cache_home / "streamdoc-dl" / doc_id
     images = [None] * page_count
     texts = [None] * page_count
     for i in range(page_count):
