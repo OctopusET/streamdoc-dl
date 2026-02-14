@@ -80,14 +80,20 @@ def download_page_image(
     base_url: str,
     doc_id: str,
     page_index: int,
-    zoom: int,
+    zoom: str,
 ) -> tuple[int, bytes]:
     """Download a single page image. Returns (index, image_bytes)."""
     url = (
         f"{base_url}/v4/documents/{doc_id}/renderings/{page_index}"
-        f"?zoom={zoom}&jpegQuality=h&renderAnnots=false&increasePrint=false"
+        f"?zoom={zoom}&renderAnnots=false"
     )
     resp = session.get(url)
+    if resp.status_code != 200 and zoom == "max":
+        url = (
+            f"{base_url}/v4/documents/{doc_id}/renderings/{page_index}"
+            f"?zoom=300&renderAnnots=false"
+        )
+        resp = session.get(url)
     resp.raise_for_status()
     ct = resp.headers.get("x-streamdocs-content-type", "")
     return page_index, fix_image_bytes(resp.content, ct)
@@ -230,7 +236,7 @@ def main():
     parser.add_argument("url", help="StreamDocs viewer URL")
     parser.add_argument("-o", "--output", help="Output PDF path")
     parser.add_argument(
-        "-z", "--zoom", type=int, default=300, help="Zoom level (default: 300)"
+        "-z", "--zoom", default="max", help="Zoom level: 'max' for highest quality, or a number (default: max)"
     )
     parser.add_argument(
         "-j", "--jobs", type=int, default=4, help="Concurrent downloads (default: 4)"
