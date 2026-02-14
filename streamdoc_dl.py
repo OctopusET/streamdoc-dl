@@ -155,6 +155,8 @@ def register_font(font_path: str | None) -> str:
         return "TextFont"
 
     # Fallback: CID font (built into reportlab, no file needed)
+    print("Warning: No Korean TTF font found, using built-in CID font fallback")
+    print("For best results, install a Korean font or specify --font /path/to/font.ttf")
     from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 
     pdfmetrics.registerFont(UnicodeCIDFont("HYSMyeongJo-Medium"))

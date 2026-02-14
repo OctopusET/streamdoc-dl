@@ -48,15 +48,23 @@ streamdoc-dl URL --compress          # default: ebook quality
 streamdoc-dl URL --compress printer  # higher quality
 ```
 
-### Font auto-detection
+### Font Requirements
 
-The invisible text layer needs a Korean-capable font for search/copy. The tool tries:
+**Important:** A Korean-capable font is required for the text layer to work properly.
 
+The tool tries to auto-detect in this order:
 1. NanumGothic from common system paths
 2. `fc-match :lang=ko` (Linux with fontconfig)
-3. Fallback to reportlab built-in CID font (HYSMyeongJo-Medium)
+3. Fallback to reportlab built-in CID font (may not work on all platforms)
 
-To use a specific font: `--font /path/to/font.ttf`
+**Installation:**
+- Arch/Manjaro: `sudo pacman -S noto-fonts-cjk`
+- Debian/Ubuntu: `sudo apt install fonts-noto-cjk`
+- Termux (Android): `pkg install noto-fonts-cjk`
+- macOS: `brew install font-noto-sans-cjk`
+- Windows: Download from [Google Fonts](https://fonts.google.com/noto/specimen/Noto+Sans+KR)
+
+Or specify manually: `--font /path/to/font.ttf`
 
 ### Tor
 
