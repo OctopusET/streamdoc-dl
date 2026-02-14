@@ -245,6 +245,11 @@ def main():
         metavar="LEVEL",
         help="Compress PDF with Ghostscript (levels: screen, ebook, printer, prepress; default: ebook)",
     )
+    parser.add_argument(
+        "--tor",
+        action="store_true",
+        help="Route traffic through Tor (SOCKS5 proxy on 127.0.0.1:9050)",
+    )
     args = parser.parse_args()
 
     base_url, doc_id = parse_streamdocs_url(args.url)
@@ -252,6 +257,10 @@ def main():
     print(f"Document ID: {doc_id}")
 
     session = requests.Session()
+    if args.tor:
+        proxy = "socks5h://127.0.0.1:9050"
+        session.proxies = {"http": proxy, "https": proxy}
+        print("Using Tor proxy")
     session.get(f"{base_url}/view/sd;streamdocsId={doc_id}")
 
     info = get_document_info(session, base_url, doc_id)
