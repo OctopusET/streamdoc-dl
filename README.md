@@ -26,16 +26,17 @@ Output filename is auto-detected from the server metadata.
 ### Options
 
 ```
-streamdoc-dl URL [-o OUTPUT] [-z ZOOM] [-j JOBS] [--font FONT] [--compress [LEVEL]]
+streamdoc-dl URL [-o OUTPUT] [-z ZOOM] [-j JOBS] [--font FONT] [--compress [LEVEL]] [--tor]
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `-o` | auto | Output PDF path |
-| `-z` | 300 | Zoom level (100=native, 200=2x, 300=3x) |
+| `-z` | max | Zoom level: `max` for highest quality, or a number (100=native, 200=2x, 300=3x) |
 | `-j` | 4 | Concurrent download threads |
 | `--font` | auto | Path to TTF font for text layer |
 | `--compress` | off | Compress with Ghostscript (screen/ebook/printer/prepress) |
+| `--tor` | off | Route traffic through Tor (SOCKS5 proxy on 127.0.0.1:9050) |
 
 ### Compression
 
@@ -55,6 +56,21 @@ The invisible text layer needs a Korean-capable font for search/copy. The tool t
 3. Fallback to reportlab built-in CID font (HYSMyeongJo-Medium)
 
 To use a specific font: `--font /path/to/font.ttf`
+
+### Tor
+
+Use `--tor` to route all traffic through Tor (must be running on port 9050):
+
+```
+tor &
+streamdoc-dl URL --tor
+```
+
+### Resume
+
+Interrupted downloads are automatically resumed. Page images and text are cached
+in `.streamdoc-dl-cache/` as they download. Re-run the same command to continue
+from where it left off. The cache is cleaned up after the PDF is built.
 
 ## How it works
 
