@@ -183,6 +183,14 @@ def build_pdf(layouts, images, texts, output_path, doc_info=None, font_name="Hel
             c.drawImage(img, 0, 0, width=w, height=h)
 
         if texts[i]:
+            # Compute median char height to detect watermark chars
+            heights = []
+            for block in texts[i]:
+                for rect in block.get("rect", []):
+                    heights.append(rect["top"] - rect["bottom"])
+            median_h = sorted(heights)[len(heights) // 2] if heights else 16
+            wm_threshold = median_h * 2
+
             c.setFillAlpha(0)
             for block in texts[i]:
                 text_str = block.get("text", "")
@@ -191,12 +199,11 @@ def build_pdf(layouts, images, texts, output_path, doc_info=None, font_name="Hel
                     continue
 
                 for ch, rect in zip(text_str, rects):
-                    left = rect["left"]
-                    bottom = rect["bottom"]
-                    top = rect["top"]
-                    font_size = max(top - bottom, 1)
+                    font_size = max(rect["top"] - rect["bottom"], 1)
+                    if font_size > wm_threshold:
+                        continue
                     c.setFont(font_name, font_size)
-                    c.drawString(left, bottom, ch)
+                    c.drawString(rect["left"], rect["bottom"], ch)
 
         c.showPage()
 
