@@ -161,7 +161,7 @@ def register_font(font_path: str | None) -> str:
     return "HYSMyeongJo-Medium"
 
 
-def build_pdf(layouts, images, texts, output_path, doc_info=None, font_name="Helvetica"):
+def build_pdf(layouts, images, texts, output_path, doc_info=None, font_name="Helvetica", strip_watermark=True):
     """Build a PDF with image backgrounds and invisible text overlay."""
     c = canvas.Canvas(str(output_path))
 
@@ -183,23 +183,22 @@ def build_pdf(layouts, images, texts, output_path, doc_info=None, font_name="Hel
             c.drawImage(img, 0, 0, width=w, height=h)
 
         if texts[i]:
-            # Detect watermark: look for chars with rotate=15 block
-            # or bimodal height distribution (large gap between clusters)
+            # Detect watermark: rotated blocks + bimodal height distribution
             wm_threshold = None
-            heights = []
-            has_rotated = False
-            for block in texts[i]:
-                if block.get("rotate", 0) != 0:
-                    has_rotated = True
-                for rect in block.get("rect", []):
-                    heights.append(rect["top"] - rect["bottom"])
-            if has_rotated and heights:
-                sorted_h = sorted(heights)
-                median_h = sorted_h[len(sorted_h) // 2]
-                max_h = sorted_h[-1]
-                # Only filter if the tallest chars are 3x+ the median
-                if max_h >= median_h * 3:
-                    wm_threshold = median_h * 2
+            if strip_watermark:
+                heights = []
+                has_rotated = False
+                for block in texts[i]:
+                    if block.get("rotate", 0) != 0:
+                        has_rotated = True
+                    for rect in block.get("rect", []):
+                        heights.append(rect["top"] - rect["bottom"])
+                if has_rotated and heights:
+                    sorted_h = sorted(heights)
+                    median_h = sorted_h[len(sorted_h) // 2]
+                    max_h = sorted_h[-1]
+                    if max_h >= median_h * 3:
+                        wm_threshold = median_h * 2
 
             c.setFillAlpha(0)
             for block in texts[i]:
@@ -270,6 +269,11 @@ def main():
         "--tor",
         action="store_true",
         help="Route traffic through Tor (SOCKS5 proxy on 127.0.0.1:9050)",
+    )
+    parser.add_argument(
+        "--no-strip-watermark",
+        action="store_true",
+        help="Keep watermark characters in the text layer",
     )
     args = parser.parse_args()
 
@@ -371,7 +375,7 @@ def main():
         output = filename if filename else f"{doc_id[:32]}.pdf"
 
     print("Building PDF...")
-    build_pdf(layouts, images, texts, output, doc_info=info.get("info", {}), font_name=font_name)
+    build_pdf(layouts, images, texts, output, doc_info=info.get("info", {}), font_name=font_name, strip_watermark=not args.no_strip_watermark)
 
     if args.compress:
         print(f"Compressing ({args.compress})...")

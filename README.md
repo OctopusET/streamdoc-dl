@@ -37,6 +37,7 @@ streamdoc-dl URL [-o OUTPUT] [-z ZOOM] [-j JOBS] [--font FONT] [--compress [LEVE
 | `--font` | auto | Path to TTF font for text layer |
 | `--compress` | off | Compress with Ghostscript (screen/ebook/printer/prepress) |
 | `--tor` | off | Route traffic through Tor (SOCKS5 proxy on 127.0.0.1:9050) |
+| `--no-strip-watermark` | off | Keep watermark characters in the text layer |
 
 ### Compression
 
