@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "streamdoc-dl"
-version = "0.2.0"
+version = "0.2.1"
 description = "Download PDFs from ePapyrus StreamDocs viewers"
 readme = "README.md"
 license = "GPL-3.0-or-later"
